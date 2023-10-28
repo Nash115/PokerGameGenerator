@@ -21,13 +21,16 @@ class CardDeck:
         return str(self.deck)
     def shuffle(self):
         random.shuffle(self.deck)
-    def distribute(self, list_of_players):
+    def distribute(self, list_of_players, table):
         for _ in range(2):
             for player in list_of_players:
+                table.add_cards([self.deck[0]])
                 player.hand.append(self.deck.pop(0))
-    def deal(self, nb_of_cards):
+    def deal(self, nb_of_cards, table):
         self.deck.pop(0) # Burn card
-        return [self.deck.pop(0) for _ in range(nb_of_cards)]
+        tab = [self.deck.pop(0) for _ in range(nb_of_cards)]
+        table.add_cards(tab)
+        return tab
 
 class Player:
     def __init__(self) -> None:
@@ -51,7 +54,14 @@ class Table:
         10:"Royal Flush"
     }
     def __init__(self) -> None:
-        pass
+        self.all_cards = []
+        self.high_card = ""
+    def add_cards(self, list_of_cards):
+        self.all_cards += list_of_cards
+    def getHighCard(self):
+        all_values = [i.value for i in self.all_cards]
+        all_values.sort(key=lambda x: Card.values.index(x))
+        self.high_card = all_values[-1]
     def detect_combinaison(self, hand):
         if self.is_royal(hand):
             return 10 # Royal Flush
@@ -71,7 +81,7 @@ class Table:
             return 3 # Two pairs
         elif self.is_one_pair(hand):
             return 2 # One pair
-        elif self.is_a(hand,"A") or self.is_a(hand,"K") or self.is_a(hand,"Q") or self.is_a(hand,"J"):
+        elif self.is_a(hand,self.high_card):
             return 1 # High card
         else:
             return 0 # Nothing
@@ -184,23 +194,36 @@ game = []
 
 for round_nb in range(nb_of_rounds):
     print(f"\r[{'#'*int(round_nb/nb_of_rounds*100)}{'_'*(99-int(round_nb/nb_of_rounds*100))}] {round_nb+1}/{nb_of_rounds} ({round(((round_nb+1)/(nb_of_rounds))*100,2)}%)", end="")
+    table = Table()
     players = [Player() for _ in range(nb_of_players)]
     deck = CardDeck()
     deck.shuffle()
-    deck.distribute(players)
+    deck.distribute(players,table)
     game.append({f"player{i+1}":players[i].hand for i in range(nb_of_players)})
-    game[-1]["FlopTurnRiver"] = list(deck.deal(3) + deck.deal(1) + deck.deal(1))
-    plrys = [f"player{i+1}" for i in range(nb_of_players)]
-    for plyr in plrys:
-        game[-1][f"{plyr}_result"] = Table.combinaisons[Table().detect_combinaison(game[-1][plyr]+game[-1]["FlopTurnRiver"])]  
+    game[-1]["FlopTurnRiver"] = list(deck.deal(3,table) + deck.deal(1,table) + deck.deal(1,table))
+    table.getHighCard()
+    plrys = {f"player{i+1}":0 for i in range(nb_of_players)}
+    for plyr in plrys.keys():
+        plrys[plyr] = table.detect_combinaison(game[-1][plyr]+game[-1]["FlopTurnRiver"])
+        game[-1][f"{plyr}_result"] = table.combinaisons[plrys[plyr]]
+    # Detect the winner
+    winners  = []
+    max_combinaison = 0
+    for plyr in plrys.keys():
+        if plrys[plyr] > max_combinaison:
+            max_combinaison = plrys[plyr]
+    for plyr in plrys.keys():
+        if plrys[plyr] == max_combinaison:
+            winners.append(plyr)
+    game[-1]["winner"] = winners
 print()
 
 if save:
     # Save the game into a csv file
     print("Saving the game into a csv file...")
     with open(f"{nb_of_players}p-{nb_of_rounds}r_game_{initTime}.csv", "w", newline="") as csvfile:
-        fieldnames = ["FlopTurnRiver"] + [f"player{i+1}" for i in range(nb_of_players)] + [f"player{i+1}_result" for i in range(nb_of_players)]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        fieldnames = ["FlopTurnRiver"] + [f"player{i+1}" for i in range(nb_of_players)] + [f"player{i+1}_result" for i in range(nb_of_players)] + ["winner"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
         writer.writeheader()
         for round in game:
             writer.writerow(round)
