@@ -221,7 +221,7 @@ print()
 if save:
     # Save the game into a csv file
     print("Saving the game into a csv file...")
-    with open(f"{nb_of_players}p-{nb_of_rounds}r_game_{initTime}.csv", "w", newline="") as csvfile:
+    with open(f"{nb_of_players}p-{nb_of_rounds}r_game_{initTime}.csv", "w", newline="", encoding="utf-8") as csvfile:
         fieldnames = ["FlopTurnRiver"] + [f"player{i+1}" for i in range(nb_of_players)] + [f"player{i+1}_result" for i in range(nb_of_players)] + ["winner"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
         writer.writeheader()
