@@ -175,56 +175,57 @@ class Table:
             return True
         return False
 
-nb_of_players = int(input("Number of players: "))
-assert type(nb_of_players) == int
-assert nb_of_players > 0
-nb_of_rounds = int(input("Number of rounds: "))
-assert type(nb_of_rounds) == int
-assert nb_of_rounds > 0
-save = input("Save the game? (y/n): ")
-assert save in ["y","n","Y","N",""]
-if save == "y" or save == "Y":
-    save = True
-else:
-    print("The game won't be saved !")
-    save = False
-print(f"Generating {nb_of_rounds} game{'s' if nb_of_rounds > 1 else ''} with {nb_of_players} player{'s' if nb_of_players > 1 else ''}...")
-
-game = []
-
-for round_nb in range(nb_of_rounds):
-    print(f"\r[{'#'*int(round_nb/nb_of_rounds*100)}{'_'*(99-int(round_nb/nb_of_rounds*100))}] {round_nb+1}/{nb_of_rounds} ({round(((round_nb+1)/(nb_of_rounds))*100,2)}%)", end="")
-    table = Table()
-    players = [Player() for _ in range(nb_of_players)]
-    deck = CardDeck()
-    deck.shuffle()
-    deck.distribute(players,table)
-    game.append({f"player{i+1}":players[i].hand for i in range(nb_of_players)})
-    game[-1]["FlopTurnRiver"] = list(deck.deal(3,table) + deck.deal(1,table) + deck.deal(1,table))
-    table.getHighCard()
-    plrys = {f"player{i+1}":0 for i in range(nb_of_players)}
-    for plyr in plrys.keys():
-        plrys[plyr] = table.detect_combinaison(game[-1][plyr]+game[-1]["FlopTurnRiver"])
-        game[-1][f"{plyr}_result"] = table.combinaisons[plrys[plyr]]
-    # Detect the winner
-    winners  = []
-    max_combinaison = 0
-    for plyr in plrys.keys():
-        if plrys[plyr] > max_combinaison:
-            max_combinaison = plrys[plyr]
-    for plyr in plrys.keys():
-        if plrys[plyr] == max_combinaison:
-            winners.append(plyr)
-    game[-1]["winner"] = winners
-print()
-
-if save:
-    # Save the game into a csv file
-    print("Saving the game into a csv file...")
-    with open(f"{nb_of_players}p-{nb_of_rounds}r_game_{initTime}.csv", "w", newline="", encoding="utf-8") as csvfile:
-        fieldnames = ["FlopTurnRiver"] + [f"player{i+1}" for i in range(nb_of_players)] + [f"player{i+1}_result" for i in range(nb_of_players)] + ["winner"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
-        writer.writeheader()
-        for round in game:
-            writer.writerow(round)
-print("### Done! ###")
+if __name__ == "__main__":
+    nb_of_players = int(input("Number of players: "))
+    assert type(nb_of_players) == int
+    assert nb_of_players > 0
+    nb_of_rounds = int(input("Number of rounds: "))
+    assert type(nb_of_rounds) == int
+    assert nb_of_rounds > 0
+    save = input("Save the game? (y/n): ")
+    assert save in ["y","n","Y","N",""]
+    if save == "y" or save == "Y":
+        save = True
+    else:
+        print("The game won't be saved !")
+        save = False
+    print(f"Generating {nb_of_rounds} game{'s' if nb_of_rounds > 1 else ''} with {nb_of_players} player{'s' if nb_of_players > 1 else ''}...")
+    
+    game = []
+    
+    for round_nb in range(nb_of_rounds):
+        print(f"\r[{'#'*int(round_nb/nb_of_rounds*100)}{'_'*(99-int(round_nb/nb_of_rounds*100))}] {round_nb+1}/{nb_of_rounds} ({round(((round_nb+1)/(nb_of_rounds))*100,2)}%)", end="")
+        table = Table()
+        players = [Player() for _ in range(nb_of_players)]
+        deck = CardDeck()
+        deck.shuffle()
+        deck.distribute(players,table)
+        game.append({f"player{i+1}":players[i].hand for i in range(nb_of_players)})
+        game[-1]["FlopTurnRiver"] = list(deck.deal(3,table) + deck.deal(1,table) + deck.deal(1,table))
+        table.getHighCard()
+        plrys = {f"player{i+1}":0 for i in range(nb_of_players)}
+        for plyr in plrys.keys():
+            plrys[plyr] = table.detect_combinaison(game[-1][plyr]+game[-1]["FlopTurnRiver"])
+            game[-1][f"{plyr}_result"] = table.combinaisons[plrys[plyr]]
+        # Detect the winner
+        winners  = []
+        max_combinaison = 0
+        for plyr in plrys.keys():
+            if plrys[plyr] > max_combinaison:
+                max_combinaison = plrys[plyr]
+        for plyr in plrys.keys():
+            if plrys[plyr] == max_combinaison:
+                winners.append(plyr)
+        game[-1]["winner"] = winners
+    print()
+    
+    if save:
+        # Save the game into a csv file
+        print("Saving the game into a csv file...")
+        with open(f"{nb_of_players}p-{nb_of_rounds}r_game_{initTime}.csv", "w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = ["FlopTurnRiver"] + [f"player{i+1}" for i in range(nb_of_players)] + [f"player{i+1}_result" for i in range(nb_of_players)] + ["winner"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
+            writer.writeheader()
+            for round in game:
+                writer.writerow(round)
+    print("### Done! ###")
